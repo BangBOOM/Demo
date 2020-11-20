@@ -1,9 +1,8 @@
-import atexit
 import os
 import posixpath
 from socket import *
 import sys
-import signal
+import atexit
 
 config = None
 back_log = 10
@@ -12,24 +11,15 @@ host = 'localhost'
 
 class SocketServer(object):
     def __init__(self, ):
-
         self.socket_server = socket(AF_INET, SOCK_STREAM)
         while True:
             try:
                 self.socket_server.bind(('localhost', config['port']))
                 self.socket_server.listen(back_log)
+                print("start")
                 break
             except Exception:
-                pass
-            # self.socket_server.close()
-            # exit()
-            # for proc in process_iter():
-            #     for conns in proc.connections(kind='inet'):
-            #         if conns.laddr.port == config['port']:
-            #             proc.send_signal(SIGKILL)  # or SIGKILL
-            # self.socket_server.bind(('localhost', config['port']))
-            # self.socket_server.listen(back_log)
-        # print("Access http://{host}:{port}".format(host=host, port=config['port']))
+                continue
 
     client_info = []
     response = b""
@@ -55,6 +45,7 @@ class SocketServer(object):
         except:
             self.socket_server.close()
         self.socket_server.close()
+        self.socket_server.shutdown()
 
     def handle_one_request(self):
         pass
@@ -145,7 +136,6 @@ class BaseWebServer(SocketServer):
         if path:
             with open(path, 'rb') as f:
                 r = f.read()
-                print(r.decode())
             self.response += r
 
     def guess_type(self, path):
@@ -169,6 +159,11 @@ class BaseWebServer(SocketServer):
             return extensions_map['']
 
 
+def exit_handler(s):
+    s.close()
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Missing Configuration Argument")
@@ -186,7 +181,5 @@ if __name__ == '__main__':
                 if key == 'port':
                     config[key] = int(config[key])
         ws = BaseWebServer()
+        atexit.register(exit_handler, ws.socket_server)
         ws.listen()
-        atexit.register(handle_exit, ws.socket_server)
-        signal.signal(signal.SIGTERM, handle_exit)
-        signal.signal(signal.SIGINT, handle_exit)
