@@ -41,7 +41,8 @@ class BaseHTTPRequestHandler(SocketServer):
     OK = 200, 'OK'
     protocol_version = "HTTP/1.1"
 
-    def __init__(self, staticfiles, cgibin, exec, port=8000, back_log=10, host='localhost'):
+    def __init__(self, staticfiles="", cgibin="", exec="", port=8000, back_log=10, host='localhost'):
+        self.cgibin = cgibin
         if not isinstance(port, int):
             port = int(port)
         super(BaseHTTPRequestHandler, self).__init__(host=host, port=port, back_log=back_log)
@@ -81,6 +82,7 @@ class BaseHTTPRequestHandler(SocketServer):
             with open(path, 'rb') as f:
                 r = f.read()
             self.response += r
+
 
     def guess_type(self, path):
         extensions_map = {
@@ -122,7 +124,16 @@ class BaseHTTPRequestHandler(SocketServer):
         self._headers_buffer = []
 
     def send_head(self):
+
         path = self.translate_path(self.path)
+
+        if os.path.isdir(path):
+            index = os.path.join(path,"index.html")
+            if os.path.exists(index):
+                path = index
+
+
+
         ctype = self.guess_type(path)
         self.send_response(*self.OK)
         self.send_header("Content-type", ctype)
@@ -162,7 +173,7 @@ def main(config):
 
 
 if __name__ == '__main__':
-    c = dict()
+    c = {}
     try:
         config = sys.argv[1]
         with open(config, 'r', encoding='utf-8') as f:
