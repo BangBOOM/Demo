@@ -24,7 +24,7 @@ class SocketServer(object):
             while True:
                 self.client_socket, self.address = self.socket_server.accept()
                 '''print address'''
-                print(self.address, end=' ')
+                print("%s:%d" % self.address, end=' ')
 
                 self.rfile = self.client_socket.makefile('rb', -1)
                 self.raw_requestline = self.rfile.readline(65537)
@@ -38,7 +38,7 @@ class SocketServer(object):
 
 
 class BaseHTTPRequestHandler(SocketServer):
-    OK = 200, 'OK', 'Request fulfilled, document follows'
+    OK = 200, 'OK'
     protocol_version = "HTTP/1.1"
 
     def __init__(self, staticfiles, cgibin, exec, port=8000, back_log=10, host='localhost'):
@@ -69,7 +69,6 @@ class BaseHTTPRequestHandler(SocketServer):
         if hasattr(self, mname):
             method = getattr(self, mname)
             method()
-            print("-------------------")
 
         self.client_socket.sendall(self.response)
         self.client_socket.shutdown(SHUT_WR)
@@ -81,7 +80,7 @@ class BaseHTTPRequestHandler(SocketServer):
         if os.path.isfile(path):
             with open(path, 'rb') as f:
                 r = f.read()
-        self.response += r
+            self.response += r
 
     def guess_type(self, path):
         extensions_map = {
@@ -125,7 +124,7 @@ class BaseHTTPRequestHandler(SocketServer):
     def send_head(self):
         path = self.translate_path(self.path)
         ctype = self.guess_type(path)
-        self.send_response(200, 'OK')
+        self.send_response(*self.OK)
         self.send_header("Content-type", ctype)
         self.end_header()
 
@@ -172,11 +171,10 @@ if __name__ == '__main__':
                 for l in f.read().split('\n') if '=' in l
             }
     except Exception as exc:
-        print("need a config file")
+        print("Unable To Load Configuration File")
     main(c)
 
 '''
 rbufsize = -1
 self.rfile = self.client_socket.makefile('rb',rbufsize)
-
 '''
