@@ -2,10 +2,11 @@ import sys
 from socket import *
 import http.client
 import os
+import http.server
 
 
 class SocketServer(object):
-    def __init__(self, host='localhost', port=8000, back_log=10):
+    def __init__(self, host='localhost', port=8070, back_log=10):
         print("Access http://{host}:{port}".format(host=host, port=port))
         self.socket_server = socket(AF_INET, SOCK_STREAM)
         try:
@@ -31,7 +32,9 @@ class SocketServer(object):
 
 
 class BaseHTTPRequestHandler(SocketServer):
-    def __init__(self, host='localhost', port=8000, back_log=10):
+    def __init__(self, staticfiles, cgibin, exec, port=8000, back_log=10, host='localhost'):
+        if not isinstance(port, int):
+            port = int(port)
         super(BaseHTTPRequestHandler, self).__init__(host=host, port=port, back_log=back_log)
 
     def parse_request(self):
@@ -64,16 +67,26 @@ class BaseHTTPRequestHandler(SocketServer):
         self.client_socket.shutdown(SHUT_WR)
 
     def do_GET(self):
-        pass
+        print("this is get")
 
 
-def main():
-    s = BaseHTTPRequestHandler()
+def main(config):
+    s = BaseHTTPRequestHandler(**config)
     s.listen()
 
 
 if __name__ == '__main__':
-    main()
+    c = dict()
+    try:
+        config = sys.argv[1]
+        with open(config, 'r', encoding='utf-8') as f:
+            c = {
+                l.split('=')[0]: l.split('=')[1]
+                for l in f.read().split('\n') if '=' in l
+            }
+    except Exception as exc:
+        print("need a config file")
+    main(c)
 
 '''
 rbufsize = -1
